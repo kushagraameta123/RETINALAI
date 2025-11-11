@@ -20,5 +20,6 @@
   ],
   "[typescript]": {
     "editor.defaultFormatter": "denoland.vscode-deno"
-  }
+  },
+  "cmake.sourceDirectory": "/Users/kushagraameta/Downloads/My-Final-Project/app/linux"
 }

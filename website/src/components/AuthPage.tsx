@@ -1,6 +1,8 @@
-import { Eye, Shield, Stethoscope, UserCircle, ShieldCheck } from 'lucide-react'; // Added ShieldCheck icon
+import { Eye, ShieldCheck, Stethoscope, UserCircle } from 'lucide-react'; // Added ShieldCheck icon
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'sonner'; // Using toast for notifications
+import { supabase } from '../services/supabaseClient'; // Adjust path if necessary
 import Footer from './Footer';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
@@ -9,8 +11,6 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
-import { supabase } from '../services/supabaseClient'; // Adjust path if necessary
-import { toast } from 'sonner'; // Using toast for notifications
 
 export default function AuthPage() {
   const navigate = useNavigate();
@@ -51,17 +51,25 @@ export default function AuthPage() {
 
     // Step 2: Fetch the user's actual role from the secure 'profiles' table
     const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', authData.user.id)
-      .single();
+  .from('profiles')
+  .select('role, status') // Make sure status is selected
+  .eq('id', authData.user.id)
+  .single();
 
-    if (profileError || !profile) {
-      toast.error('Could not verify user profile. Please contact support.');
-      await supabase.auth.signOut(); // Security: Sign out if profile is missing
-      setIsLoading(false);
-      return;
-    }
+if (profileError || !profile) {
+  toast.error('Could not verify user profile. Please contact support.');
+  await supabase.auth.signOut();
+  setIsLoading(false);
+  return;
+}
+
+// NEW: Check if clinician is approved
+if (profile.role === 'clinician' && profile.status !== 'active') {
+  toast.error('Your account is pending admin approval. Please wait for approval before logging in.');
+  await supabase.auth.signOut();
+  setIsLoading(false);
+  return;
+}
 
     // Step 3: Verify if the selected role matches the one in the database
     if (profile.role === loginRole) {
@@ -90,6 +98,9 @@ export default function AuthPage() {
 
   const handleSignup = async (e) => {
     e.preventDefault();
+    
+    await supabase.auth.signOut();
+  
     if (signupForm.password !== signupForm.confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -98,29 +109,58 @@ export default function AuthPage() {
       toast.error('Please agree to the terms and conditions');
       return;
     }
-
-    setIsLoading(true);
-
-    const { data, error } = await supabase.auth.signUp({
-      email: signupForm.email,
-      password: signupForm.password,
-      options: {
-        data: {
-          full_name: signupForm.name, // Ensure this matches your profiles table column
-          role: signupForm.role,
-        }
-      }
-    });
-
-    setIsLoading(false);
-
-    if (error) {
-      toast.error(`Error: ${error.message}`);
+    if (!signupForm.role) {
+      toast.error('Please select a role');
       return;
     }
-
-    if (data.user) {
-      toast.success('Sign-up successful! Please check your email for a verification link.');
+  
+    setIsLoading(true);
+  
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: signupForm.email,
+        password: signupForm.password,
+        options: {
+          data: {
+            full_name: signupForm.name,
+            role: signupForm.role,
+          }
+        }
+      });
+  
+      if (error) {
+        toast.error(`Signup failed: ${error.message}`);
+        return;
+      }
+  
+      if (data.user) {
+        if (signupForm.role === 'patient') {
+          toast.success('Account created successfully! You can now login.');
+          setSignupForm({
+            name: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            role: '',
+            agreedToTerms: false
+          });
+          navigate('/auth');
+        } else if (signupForm.role === 'clinician') {
+          toast.success('Account created! Please wait for admin approval before logging in.');
+          setSignupForm({
+            name: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            role: '',
+            agreedToTerms: false
+          });
+        }
+      }
+    } catch (error) {
+      toast.error('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
     }
   };
 

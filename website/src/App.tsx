@@ -62,8 +62,8 @@ export default function App() {
     <Router>
       <div className="min-h-screen bg-background">
         <Routes>
-          <Route path="/" element={user ? <Navigate to="/dashboard" /> : <LandingPage />} />
-          <Route path="/auth" element={user ? <Navigate to="/dashboard" /> : <AuthPage />} />
+        <Route path="/" element={<LandingPage />} />
+<Route path="/auth" element={<AuthPage />} />
           <Route path="/pending-verification" element={<PendingVerificationPage />} />
           
           {/* Public Pages */}
