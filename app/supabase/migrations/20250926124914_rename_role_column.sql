@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles RENAME COLUMN role TO user_type;

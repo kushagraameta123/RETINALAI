@@ -1,0 +1,35 @@
+name: healthcare_app
+description: A comprehensive healthcare platform using Node.js and MongoDB.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.1.0 # Included here for use in the main application
+  provider: ^6.1.5+1
+  go_router: ^15.1.2
+  intl: ^0.20.2
+  image_picker: ^1.0.4
+  file_picker: ^8.1.4
+  shared_preferences: ^2.2.2
+  dotted_border: ^2.0.0+3
+  flutter_localizations:
+    sdk: flutter
+  supabase_flutter: ^2.10.1 # Using the latest version from your context
+  url_launcher: ^6.2.0
+  flutter_markdown: ^0.7.7+1
+
+dev_dependencies:
+  # http is already listed in dependencies, removing duplicate import and version here.
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.3
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
